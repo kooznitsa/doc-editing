@@ -5,6 +5,7 @@
 
 {% block content %}
     <div class="container">
+        <h2>Step 1. Upload files</h2>
         <div class="row">
             <div class="col-md-4">
                 {{ wtf.quick_form(upload_form, enctype='multipart/form-data') }}
@@ -19,5 +20,23 @@
             {% endfor %}
         </ul>
         {% endif %}
+
+        <h2>Step 2. Get the files edited</h2>
+        <div class="row">
+            <div class="col-md-4">
+                {{ wtf.quick_form(edit_form, enctype='multipart/form-data') }}
+            </div>
+        </div>
+
+        {% if success_message %}
+        <p>{{ success_message }}</p>
+        {% endif %}
+
+        <h2>Step 3. Download files</h2>
+        <div class="row">
+            <div class="col-md-4">
+                {{ wtf.quick_form(download_form, enctype='multipart/form-data') }}
+            </div>
+        </div>
     </div>
 {% endblock %}
