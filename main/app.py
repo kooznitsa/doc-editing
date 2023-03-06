@@ -2,7 +2,7 @@ import os
 import time
 import uuid
 import concurrent.futures
-from flask import Flask, render_template, redirect, session, url_for
+from flask import Flask, render_template, redirect, session, url_for, send_from_directory
 from flask_bootstrap import Bootstrap
 
 from config import TEMPLATE_FOLDER, STATIC_FOLDER, PORT
@@ -80,14 +80,13 @@ def edit():
                             filenames=filenames,)
 
 
-@app.route('/download', methods=['GET', 'POST'])
+@app.route('/download/', methods=['GET', 'POST'])
 def download():
     download_form = DownloadForm()
     success_message = session.get('success_message', None)
 
     if download_form.submit3.data and download_form.validate_on_submit():
-        with concurrent.futures.ThreadPoolExecutor() as tpe:
-            tpe.map(file.download_file, os.listdir(os.path.abspath(file.output_path)))
+        return file.download_files()
 
     session.update({
         'success_message': 'Files have been downloaded.',
@@ -100,4 +99,4 @@ def download():
 
 
 if __name__ == '__main__':
-    app.run(port=PORT, debug=True)
+    app.run(port=PORT, threaded=True, debug=True)

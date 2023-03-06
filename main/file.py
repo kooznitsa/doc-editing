@@ -1,4 +1,5 @@
 import os
+import zipfile
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 import win32com.client
@@ -11,8 +12,8 @@ class File(object):
     word.Visible = False
     
     def __init__(self, uuid_name):
-        self.input_path = os.path.join(STATIC_FOLDER, f'files/input-{uuid_name}/')
-        self.output_path = os.path.join(STATIC_FOLDER, f'files/output-{uuid_name}/')
+        self.input_path = os.path.join(STATIC_FOLDER, f'input-{uuid_name}/')
+        self.output_path = os.path.join(STATIC_FOLDER, f'output-{uuid_name}/')
 
     def create_directories(self):
         os.mkdir(self.input_path)
@@ -55,6 +56,21 @@ class File(object):
         doc.Close()
         self.word.Quit()
 
-    def download_file(self, file):
-        print(file.filename)
-        return send_from_directory(directory=self.output_path, filename=file.filename, as_attachment=True)
+    def download_files(self):
+        archive_name = 'edited_files.zip'
+
+        zipfolder = zipfile.ZipFile(
+            os.path.join(STATIC_FOLDER, archive_name), 
+            'w', 
+            compression=zipfile.ZIP_STORED
+        )
+
+        for root, dirs, files in os.walk(self.output_path):
+            for file in files:
+                zipfolder.write(os.path.join(self.output_path, file), arcname=file)
+        zipfolder.close()
+
+        return send_from_directory(STATIC_FOLDER, archive_name, as_attachment=True)
+    
+    def delete_directories(self):
+        ...

@@ -1,5 +1,5 @@
-TEMPLATE_FOLDER = '../templates'
-STATIC_FOLDER = '../static'
+TEMPLATE_FOLDER = '../templates/'
+STATIC_FOLDER = '../static/'
 
 PORT = 5000
 
