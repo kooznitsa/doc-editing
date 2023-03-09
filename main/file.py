@@ -1,4 +1,5 @@
 import os
+import shutil
 import zipfile
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
@@ -14,6 +15,7 @@ class File(object):
     def __init__(self, uuid_name):
         self.input_path = os.path.join(STATIC_FOLDER, f'input-{uuid_name}/')
         self.output_path = os.path.join(STATIC_FOLDER, f'output-{uuid_name}/')
+        self.archive_name = f'edited-{uuid_name}.zip'
 
     def create_directories(self):
         os.mkdir(self.input_path)
@@ -57,12 +59,9 @@ class File(object):
         self.word.Quit()
 
     def download_files(self):
-        archive_name = 'edited_files.zip'
-
         zipfolder = zipfile.ZipFile(
-            os.path.join(STATIC_FOLDER, archive_name), 
-            'w', 
-            compression=zipfile.ZIP_STORED
+            os.path.join(STATIC_FOLDER, self.archive_name), 
+            'w', compression=zipfile.ZIP_STORED
         )
 
         for root, dirs, files in os.walk(self.output_path):
@@ -70,7 +69,18 @@ class File(object):
                 zipfolder.write(os.path.join(self.output_path, file), arcname=file)
         zipfolder.close()
 
-        return send_from_directory(STATIC_FOLDER, archive_name, as_attachment=True)
+        return send_from_directory(STATIC_FOLDER, self.archive_name, as_attachment=True)
     
-    def delete_directories(self):
-        ...
+    def delete_directory(self, path):
+        try:
+            shutil.rmtree(path)
+            print(f'Directory {path} removed successfully')
+        except OSError as error:
+            print(f'Directory {path} cannot be removed: {error}')
+
+    def delete_zip(self):
+        try:
+            os.remove(os.path.join(STATIC_FOLDER, self.archive_name))
+            print(f'File {self.archive_name} removed successfully')
+        except OSError as error:
+            print(f'File {self.archive_name} cannot be removed: {error}')
