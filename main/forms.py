@@ -1,6 +1,6 @@
-from flask_wtf import FlaskForm
-from wtforms import MultipleFileField, SubmitField
-from wtforms.validators import InputRequired, Length
+from flask_wtf import FlaskForm # type: ignore
+from wtforms import MultipleFileField, SubmitField # type: ignore
+from wtforms.validators import InputRequired, Length # type: ignore
 
 
 class UploadForm(FlaskForm):
@@ -16,4 +16,4 @@ class EditForm(FlaskForm):
 
 
 class DownloadForm(FlaskForm):
-    submit3 = SubmitField('Download files')
+    submit3 = SubmitField('Download')

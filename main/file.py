@@ -1,7 +1,10 @@
 import os
 import shutil
 import zipfile
+import uuid
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
+from werkzeug.wrappers.response import Response
 from flask import send_from_directory
 import win32com.client
 
@@ -12,34 +15,35 @@ class File(object):
     word = win32com.client.gencache.EnsureDispatch('Word.Application')
     word.Visible = False
     
-    def __init__(self, uuid_name):
+    def __init__(self, uuid_name: uuid.UUID) -> None:
         self.input_path = os.path.join(STATIC_FOLDER, f'input-{uuid_name}/')
         self.output_path = os.path.join(STATIC_FOLDER, f'output-{uuid_name}/')
         self.archive_name = f'edited-{uuid_name}.zip'
 
-    def create_directories(self):
+    def create_directories(self) -> None:
         os.mkdir(self.input_path)
         os.mkdir(self.output_path)
 
-    def allowed_file(self, filename):
+    def allowed_file(self, filename: str) -> bool:
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
     
-    def upload_file(self, file):
-        filename = secure_filename(file.filename)
+    def upload_file(self, file: FileStorage) -> tuple[str, str]:
+        filename = secure_filename(file.filename) \
+                if file.filename else secure_filename(str(uuid.uuid4()))
         if self.allowed_file(filename):
             file.save(os.path.join(self.input_path, filename))
             return filename, 'success'
         return f'{filename} is not a .doc(x) file', 'error'
     
-    def edit_file(self, file):
+    def edit_file(self, file: str) -> None:
         doc = self.word.Documents.Open(os.path.abspath(self.input_path + file))
 
-        def show_changes():
+        def show_changes() -> None:
             doc.Activate()
             self.word.ActiveDocument.TrackRevisions = True
             doc.ShowRevisions = 0
             
-        def add_start_text():
+        def add_start_text() -> None:
             start_text = 'Перевод с английского языка на русский язык\n'
 
             fline = doc.Range(0, 0)
@@ -58,7 +62,7 @@ class File(object):
         doc.Close()
         self.word.Quit()
 
-    def download_files(self):
+    def download_files(self) -> Response:
         zipfolder = zipfile.ZipFile(
             os.path.join(STATIC_FOLDER, self.archive_name), 
             'w', compression=zipfile.ZIP_STORED
@@ -71,14 +75,14 @@ class File(object):
 
         return send_from_directory(STATIC_FOLDER, self.archive_name, as_attachment=True)
     
-    def delete_directory(self, path):
+    def delete_directory(self, path: str) -> None:
         try:
             shutil.rmtree(path)
             print(f'Directory {path} removed successfully')
         except OSError as error:
             print(f'Directory {path} cannot be removed: {error}')
 
-    def delete_zip(self):
+    def delete_zip(self) -> None:
         try:
             os.remove(os.path.join(STATIC_FOLDER, self.archive_name))
             print(f'File {self.archive_name} removed successfully')

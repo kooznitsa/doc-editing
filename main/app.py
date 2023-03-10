@@ -5,7 +5,8 @@ import concurrent.futures
 from flask import Flask, redirect, render_template, session, url_for
 from queue import Queue, Empty
 from threading import Thread
-from flask_bootstrap import Bootstrap
+from flask_bootstrap import Bootstrap # type: ignore
+from werkzeug.wrappers.response import Response
 
 from config import TEMPLATE_FOLDER, STATIC_FOLDER, PORT
 from forms import UploadForm, EditForm, DownloadForm
@@ -30,16 +31,16 @@ bootstrap = Bootstrap(app)
 
 file = File(uuid.uuid4())
 
-queue = Queue()
+queue: Queue = Queue()
 
 
 @app.route('/')
-def index():
+def index() -> Response:
     return redirect(url_for('upload'))
 
 
 @app.route('/upload/', methods=['GET', 'POST'])
-def upload():
+def upload() -> str | Response:
     upload_form = UploadForm()
     filenames = {}
 
@@ -58,16 +59,19 @@ def upload():
 
 
 @app.route('/edit/', methods=['GET', 'POST'])
-def edit():
+def edit() -> str | Response:
     edit_form = EditForm()
     filenames = session.get('filenames', None)
 
     if edit_form.submit2.data and edit_form.validate_on_submit():
+        t1 = time.perf_counter()
+
         with concurrent.futures.ProcessPoolExecutor() as ppe:
-            t1 = time.perf_counter()
             ppe.map(file.edit_file, os.listdir(file.input_path))
-            t2 = time.perf_counter()
-            session['success_message'] = f'Editing finished in {round(t2 - t1, 2)} seconds.'
+
+        t2 = time.perf_counter()
+        session['success_message'] = f'Editing finished in {round(t2 - t1, 2)} seconds.'
+
         return redirect(url_for('download'))
 
     return render_template('edit.html', 
@@ -76,7 +80,7 @@ def edit():
                             filenames=filenames,)
 
 
-def countdown(seconds):
+def countdown(seconds: int) -> None:
     while seconds >= 0:
         m, s = divmod(seconds, 60)
         timer = f'{m:02d}:{s:02d}'
@@ -84,7 +88,7 @@ def countdown(seconds):
         time.sleep(1)
         seconds -= 1
 
-def execute_queue():
+def execute_queue() -> None:
     while True:
         try:
             q = queue.get()
@@ -95,7 +99,11 @@ def execute_queue():
 Thread(target=execute_queue, daemon=True).start()
 
 @app.route('/download/', methods=['GET', 'POST'])
-def download():
+def download() -> str | Response:
+    """Delete temporary folders, put into queue 
+    the process of deleting ZIP, download ZIP, 
+    then delete it from project after 10 sec.
+    """
     download_form = DownloadForm()
     success_message = session.get('success_message', None)
 
@@ -107,12 +115,15 @@ def download():
         queue.put(lambda: countdown(10))
         queue.put(lambda: file.delete_zip())
 
+        session.clear()
+
         return download
     
     return render_template('download.html', 
                             download_form=download_form, 
                             title='Download files',
-                            success_message=success_message,)
+                            success_message=success_message,
+                            filename=file.archive_name,)
 
 
 if __name__ == '__main__':
