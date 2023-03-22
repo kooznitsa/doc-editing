@@ -3,4 +3,4 @@ STATIC_FOLDER = '../static/'
 
 PORT = 5000
 
-ALLOWED_EXTENSIONS = {'doc', 'docx'}
+ALLOWED_EXTENSIONS = {'docx'}

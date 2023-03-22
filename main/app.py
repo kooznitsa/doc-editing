@@ -1,16 +1,18 @@
+import concurrent.futures
 import os
 import time
 import uuid
-import concurrent.futures
+
 from flask import Flask, redirect, render_template, session, url_for
-from queue import Queue, Empty
-from threading import Thread
 from flask_bootstrap import Bootstrap # type: ignore
+from queue import Queue
+from threading import Thread
 from werkzeug.wrappers.response import Response
 
-from config import TEMPLATE_FOLDER, STATIC_FOLDER, PORT
-from forms import UploadForm, EditForm, DownloadForm
+from config import STATIC_FOLDER, TEMPLATE_FOLDER, PORT
 from file import File
+from forms import EditForm, DownloadForm, UploadForm
+from utils import countdown, execute_queue
 
 
 app = Flask(
@@ -66,8 +68,11 @@ def edit() -> str | Response:
     if edit_form.submit2.data and edit_form.validate_on_submit():
         t1 = time.perf_counter()
 
-        with concurrent.futures.ProcessPoolExecutor() as ppe:
-            ppe.map(file.edit_file, os.listdir(file.input_path))
+        files = os.listdir(file.input_path)
+        start_text = edit_form.start_text.data
+
+        for f in files:
+            file.edit_file(f, start_text)
 
         t2 = time.perf_counter()
         session['success_message'] = f'Editing finished in {round(t2 - t1, 2)} seconds.'
@@ -80,23 +85,7 @@ def edit() -> str | Response:
                             filenames=filenames,)
 
 
-def countdown(seconds: int) -> None:
-    while seconds >= 0:
-        m, s = divmod(seconds, 60)
-        timer = f'{m:02d}:{s:02d}'
-        print('Time until file gets deleted:', timer, end='\r')
-        time.sleep(1)
-        seconds -= 1
-
-def execute_queue() -> None:
-    while True:
-        try:
-            q = queue.get()
-            q()
-        except Empty:
-            pass
-        
-Thread(target=execute_queue, daemon=True).start()
+Thread(target=execute_queue, args=(queue,), daemon=True).start()
 
 @app.route('/download/', methods=['GET', 'POST'])
 def download() -> str | Response:

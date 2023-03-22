@@ -1,20 +1,19 @@
 import os
 import shutil
-import zipfile
+from typing import Optional
 import uuid
-from werkzeug.utils import secure_filename
-from werkzeug.datastructures import FileStorage
-from werkzeug.wrappers.response import Response
-from flask import send_from_directory
-import win32com.client
+import zipfile
 
-from config import STATIC_FOLDER, ALLOWED_EXTENSIONS
+from flask import send_from_directory
+from werkzeug.datastructures import FileStorage
+from werkzeug.utils import secure_filename
+from werkzeug.wrappers.response import Response
+
+from config import ALLOWED_EXTENSIONS, STATIC_FOLDER
+from docfile import DocFile
 
 
 class File(object):
-    word = win32com.client.gencache.EnsureDispatch('Word.Application')
-    word.Visible = False
-    
     def __init__(self, uuid_name: uuid.UUID) -> None:
         self.input_path = os.path.join(STATIC_FOLDER, f'input-{uuid_name}/')
         self.output_path = os.path.join(STATIC_FOLDER, f'output-{uuid_name}/')
@@ -33,35 +32,13 @@ class File(object):
         if self.allowed_file(filename):
             file.save(os.path.join(self.input_path, filename))
             return filename, 'success'
-        return f'{filename} is not a .doc(x) file', 'error'
+        return f'{filename} is not a .DOCX file', 'error'
     
-    def edit_file(self, file: str) -> None:
-        doc = self.word.Documents.Open(os.path.abspath(self.input_path + file))
-
-        def show_changes() -> None:
-            doc.Activate()
-            self.word.ActiveDocument.TrackRevisions = True
-            doc.ShowRevisions = 0
-            
-        def add_start_text() -> None:
-            start_text = 'Перевод с английского языка на русский язык\n'
-
-            fline = doc.Range(0, 0)
-            fline.InsertBefore(start_text)
-            fline.Font.Name = 'Times New Roman'
-            fline.Font.Size = 11
-            fline.Font.Italic = True
-            fline.Font.Underline = 2
-            fline.Font.Bold = False
-            fline.Paragraphs.Alignment = win32com.client.constants.wdAlignParagraphRight
-
-        show_changes()
-        add_start_text()
-
-        doc.SaveAs(os.path.abspath(self.output_path + file))
-        doc.Close()
-        self.word.Quit()
-
+    def edit_file(self, file: str, start_text: Optional[str] = None) -> None:
+        doc = DocFile(self.input_path, self.output_path, file)
+        doc.add_start_text(start_text)
+        doc.save_file()
+    
     def download_files(self) -> Response:
         zipfolder = zipfile.ZipFile(
             os.path.join(STATIC_FOLDER, self.archive_name), 

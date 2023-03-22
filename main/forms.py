@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm # type: ignore
-from wtforms import MultipleFileField, SubmitField # type: ignore
+from wtforms import MultipleFileField, StringField, SubmitField # type: ignore
 from wtforms.validators import InputRequired, Length # type: ignore
 
 
@@ -12,6 +12,8 @@ class UploadForm(FlaskForm):
 
 
 class EditForm(FlaskForm):
+    start_text = StringField('Add start text', 
+            validators=[Length(max=100, message='A maximum of 100 characters are allowed.')])
     submit2 = SubmitField('Edit files')
 
 
