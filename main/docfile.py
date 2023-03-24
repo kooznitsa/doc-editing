@@ -1,21 +1,70 @@
+from itertools import product
+import re
 import os
 from typing import Optional
+
 import docx
 from docx.shared import Pt
+from docx.text.paragraph import Paragraph
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+from utils import convert_dates, paragraph_replace_text
+
+
+FONT_NAME = 'Times New Roman'
+FONT_SIZE = Pt(11)
+HEADER_TOP_MARGIN = Pt(24)
+HEADER_BTM_MARGIN = Pt(6)
 
 
 class DocFile(object):
     def __init__(self, 
                  input_path: str, 
                  output_path: str, 
-                 file: str) -> None:
+                 file: str,
+                 date_format: str) -> None:
         self.input_path = input_path
         self.output_path = output_path
         self.file = file
         self.doc = docx.Document(os.path.abspath(self.input_path + file))
 
-    def add_start_text(self, start_text: Optional[str]) -> None:
+    def replace_text(self, old_string: str, new_str: str, date_format: str) -> None:
+        regex = re.compile(re.escape(old_string))
+
+        def replace_quotes(paragraph: Paragraph) -> Paragraph:
+            paragraph.text = re.sub(r'\"(.*?)\"', r'«\1»', paragraph.text)
+            return paragraph
+        
+        for paragraph in self.doc.paragraphs:
+            paragraph_replace_text(paragraph, regex, new_str)
+            replace_quotes(paragraph)
+            convert_dates(paragraph.text, date_format)
+
+        for table in self.doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        paragraph_replace_text(paragraph, regex, new_str)
+                        replace_quotes(paragraph)
+                        convert_dates(paragraph.text, date_format)
+
+        for section in self.doc.sections:
+            for p1, p2, p3 in product(section.header.paragraphs, 
+                                      section.first_page_header.paragraphs,
+                                      section.footer.paragraphs):
+                paragraph_replace_text(p1, regex, new_str)
+                paragraph_replace_text(p2, regex, new_str)
+                paragraph_replace_text(p3, regex, new_str)
+
+                replace_quotes(p1)
+                replace_quotes(p2)
+                replace_quotes(p3)
+
+                convert_dates(p1.text, date_format)
+                convert_dates(p2.text, date_format)
+                convert_dates(p3.text, date_format)
+
+    def add_start_text(self, start_text: Optional[str] = None) -> None:
         if start_text:
             section = self.doc.sections[0]
             section.different_first_page_header_footer = True
@@ -24,16 +73,16 @@ class DocFile(object):
             first_paragraph = first_page_header.paragraphs[0]
             run = first_paragraph.add_run(start_text)
             first_page_header.add_paragraph()
-            first_page_header.paragraphs[1].add_run(existing_text)
+            first_page_header.paragraphs[-1].add_run(existing_text)
 
             paragraph_format = first_paragraph.paragraph_format
             paragraph_format.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            section.header_distance = Pt(24)
-            paragraph_format.space_after = Pt(6)
+            section.header_distance = HEADER_TOP_MARGIN
+            paragraph_format.space_after = HEADER_BTM_MARGIN
             
             font = run.font
-            font.name = 'Times New Roman'
-            font.size = Pt(11)
+            font.name = FONT_NAME
+            font.size = FONT_SIZE
             font.italic = True
             font.underline = True
 

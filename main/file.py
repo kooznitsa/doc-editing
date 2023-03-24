@@ -11,6 +11,7 @@ from werkzeug.wrappers.response import Response
 
 from config import ALLOWED_EXTENSIONS, STATIC_FOLDER
 from docfile import DocFile
+from utils import REPL_DICT
 
 
 class File(object):
@@ -34,8 +35,15 @@ class File(object):
             return filename, 'success'
         return f'{filename} is not a .DOCX file', 'error'
     
-    def edit_file(self, file: str, start_text: Optional[str] = None) -> None:
+    def edit_file(self, 
+                  file: str, 
+                  date_format: str,
+                  start_text: Optional[str] = None) -> None:
         doc = DocFile(self.input_path, self.output_path, file)
+
+        for regex, replace_str in REPL_DICT.items():
+            doc.replace_text(regex, replace_str, date_format)
+
         doc.add_start_text(start_text)
         doc.save_file()
     
