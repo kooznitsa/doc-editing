@@ -1,6 +1,5 @@
 import calendar
 import datetime
-from datetime import datetime
 import locale
 import re
 import time
@@ -82,10 +81,6 @@ def paragraph_replace_text(paragraph: Paragraph,
     return paragraph
 
 
-def get_current_date(date_format: str) -> str:
-    return datetime.today().strftime(date_format)
-
-
 def correct_month(date: str) -> str:
     """Correct months:
     Март —> марта
@@ -98,6 +93,10 @@ def correct_month(date: str) -> str:
         return date
     except:
         return date
+    
+
+def get_current_date(date_format: str) -> str:
+    return correct_month(datetime.datetime.today().strftime(date_format))
 
 
 def convert_dates(text: str, date_format: str) -> str:

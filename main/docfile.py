@@ -21,8 +21,7 @@ class DocFile(object):
     def __init__(self, 
                  input_path: str, 
                  output_path: str, 
-                 file: str,
-                 date_format: str) -> None:
+                 file: str) -> None:
         self.input_path = input_path
         self.output_path = output_path
         self.file = file
@@ -38,7 +37,7 @@ class DocFile(object):
         for paragraph in self.doc.paragraphs:
             paragraph_replace_text(paragraph, regex, new_str)
             replace_quotes(paragraph)
-            convert_dates(paragraph.text, date_format)
+            paragraph.text = convert_dates(paragraph.text, date_format)
 
         for table in self.doc.tables:
             for row in table.rows:
@@ -46,7 +45,7 @@ class DocFile(object):
                     for paragraph in cell.paragraphs:
                         paragraph_replace_text(paragraph, regex, new_str)
                         replace_quotes(paragraph)
-                        convert_dates(paragraph.text, date_format)
+                        paragraph.text = convert_dates(paragraph.text, date_format)
 
         for section in self.doc.sections:
             for p1, p2, p3 in product(section.header.paragraphs, 
@@ -60,9 +59,9 @@ class DocFile(object):
                 replace_quotes(p2)
                 replace_quotes(p3)
 
-                convert_dates(p1.text, date_format)
-                convert_dates(p2.text, date_format)
-                convert_dates(p3.text, date_format)
+                p1.text = convert_dates(p1.text, date_format)
+                p2.text = convert_dates(p2.text, date_format)
+                p3.text = convert_dates(p3.text, date_format)
 
     def add_start_text(self, start_text: Optional[str] = None) -> None:
         if start_text:
