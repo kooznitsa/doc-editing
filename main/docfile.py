@@ -8,7 +8,7 @@ from docx.shared import Pt
 from docx.text.paragraph import Paragraph
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-from utils import convert_dates, paragraph_replace_text
+from utils import convert_dates, get_locale, paragraph_replace_text
 
 
 FONT_NAME = 'Times New Roman'
@@ -27,17 +27,22 @@ class DocFile(object):
         self.file = file
         self.doc = docx.Document(os.path.abspath(self.input_path + file))
 
-    def replace_text(self, old_string: str, new_str: str, date_format: str) -> None:
+    def replace_text(self, 
+                     old_string: str, 
+                     new_str: str, 
+                     language: str, 
+                     date_format: str) -> None:
+        MONTHS, new_quotes = get_locale(language)
         regex = re.compile(re.escape(old_string))
 
         def replace_quotes(paragraph: Paragraph) -> Paragraph:
-            paragraph.text = re.sub(r'\"(.*?)\"', r'«\1»', paragraph.text)
+            paragraph.text = re.sub(r'\"(.*?)\"', new_quotes, paragraph.text)
             return paragraph
         
         for paragraph in self.doc.paragraphs:
             paragraph_replace_text(paragraph, regex, new_str)
             replace_quotes(paragraph)
-            paragraph.text = convert_dates(paragraph.text, date_format)
+            paragraph.text = convert_dates(paragraph.text, date_format, MONTHS)
 
         for table in self.doc.tables:
             for row in table.rows:
@@ -45,7 +50,7 @@ class DocFile(object):
                     for paragraph in cell.paragraphs:
                         paragraph_replace_text(paragraph, regex, new_str)
                         replace_quotes(paragraph)
-                        paragraph.text = convert_dates(paragraph.text, date_format)
+                        paragraph.text = convert_dates(paragraph.text, date_format, MONTHS)
 
         for section in self.doc.sections:
             for p1, p2, p3 in product(section.header.paragraphs, 
@@ -59,9 +64,9 @@ class DocFile(object):
                 replace_quotes(p2)
                 replace_quotes(p3)
 
-                p1.text = convert_dates(p1.text, date_format)
-                p2.text = convert_dates(p2.text, date_format)
-                p3.text = convert_dates(p3.text, date_format)
+                p1.text = convert_dates(p1.text, date_format, MONTHS)
+                p2.text = convert_dates(p2.text, date_format, MONTHS)
+                p3.text = convert_dates(p3.text, date_format, MONTHS)
 
     def add_start_text(self, start_text: Optional[str] = None) -> None:
         if start_text:

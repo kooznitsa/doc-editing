@@ -69,11 +69,12 @@ def edit() -> str | Response:
         t1 = time.perf_counter()
 
         files = os.listdir(file.input_path)
-        start_text = edit_form.start_text.data
+        language = edit_form.language.data
         date_format = edit_form.date_format.data
+        start_text = edit_form.start_text.data
 
         for f in files:
-            file.edit_file(f, date_format, start_text)
+            file.edit_file(f, language, date_format, start_text)
 
         t2 = time.perf_counter()
         session['success_message'] = f'Editing finished in {round(t2 - t1, 2)} seconds.'
