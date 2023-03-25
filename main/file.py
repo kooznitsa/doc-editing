@@ -35,11 +35,13 @@ class File(object):
             return filename, 'success'
         return f'{filename} is not a .DOCX file', 'error'
     
-    def edit_file(self, 
-                  file: str, 
-                  language: str,
-                  date_format: str,
-                  start_text: Optional[str] = None) -> None:
+    def edit_file(
+        self, 
+        file: str, 
+        language: str,
+        date_format: Optional[str] = None,
+        start_text: Optional[str] = None
+    ) -> None:
         doc = DocFile(self.input_path, self.output_path, file)
 
         for regex, replace_str in REPL_DICT.items():

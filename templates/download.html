@@ -1,6 +1,5 @@
-{% extends "bootstrap/base.html" %} 
-{% import "bootstrap/wtf.html" as wtf %} 
-{% include "navbar.html" %} 
+{% extends "index.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% block content %}
 <div class="container">
@@ -9,7 +8,7 @@
     {% endif %}
 
     <h2>Step 3. Download files</h2>
-    <p>Download ZIP file <strong>{{ filename }}:</strong></p>
+    <p>Download .ZIP file <strong>{{ filename }}:</strong></p>
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(download_form, enctype="multipart/form-data", button_map={'submit3': 'primary'}) }}

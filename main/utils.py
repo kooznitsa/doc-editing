@@ -1,16 +1,17 @@
 import calendar
 import datetime
 import locale
+from queue import Empty, Queue
 import re
 import time
-from queue import Empty, Queue
+from typing import Optional
 
-from docx.text.paragraph import Paragraph
+from docx.text.paragraph import Paragraph # type: ignore
 
 
 FORMATS = (
     '%d %B %Y', '%d.%m.%Y', '%d-%m-%Y',
-    '%d/%m/%Y', '%Y.%m.%d', '%Y-%m-%d', '%Y/%m/%d'
+    '%d/%m/%Y', '%Y.%m.%d', '%Y-%m-%d', '%Y/%m/%d',
 )
 
 REPL_DICT = {
@@ -29,15 +30,15 @@ REPL_DICT = {
 def get_locale(language: str):
     if language == 'Russian':
         locale.setlocale(locale.LC_ALL, 'ru-Ru')
-        months = 'января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря'
+        MONTHS = 'января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря'
         new_quotes = r'«\1»'
 
     elif language == 'English':
         locale.setlocale(locale.LC_ALL, 'en-US')
-        months = '|'.join(list(calendar.month_name)[1:])
+        MONTHS = '|'.join(list(calendar.month_name)[1:])
         new_quotes = r'“\1”'
 
-    return months, new_quotes
+    return MONTHS, new_quotes
 
 
 def countdown(seconds: int) -> None:
@@ -58,9 +59,11 @@ def execute_queue(queue: Queue) -> None:
             pass
         
 
-def paragraph_replace_text(paragraph: Paragraph, 
-                           regex: str, 
-                           replace_str: str) -> Paragraph:
+def paragraph_replace_text(
+    paragraph: Paragraph, 
+    regex: re.Pattern, 
+    replace_str: str
+) -> Paragraph:
     while True:
         text = paragraph.text
         match = regex.search(text)
@@ -111,7 +114,11 @@ def get_current_date(date_format: str) -> str:
     return correct_month(datetime.datetime.today().strftime(date_format), MONTHS)
 
 
-def convert_dates(text: str, date_format: str, MONTHS: str) -> str:
+def convert_dates(
+    text: str, 
+    MONTHS: str, 
+    date_format: Optional[str] = None
+) -> Optional[str]:
     """Accept and return the following date formats:
     '%d %B %Y'   (24 марта 2023)
     '%d.%m.%Y'   (24.03.2023)
@@ -121,24 +128,26 @@ def convert_dates(text: str, date_format: str, MONTHS: str) -> str:
     '%Y-%m-%d'   (2023-03-24)
     '%Y/%m/%d'   (2023/03/24)
     """
-    patterns = [
-        r'(\d{1,2} (?:' + MONTHS + ') \d{4})',
-        r'(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})'
-    ]
+    if date_format:
+        patterns = [
+            r'(\d{1,2} (?:' + MONTHS + ') \d{4})',
+            r'(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})'
+        ]
 
-    NUMBERS = '01|02|03|04|05|06|07|08|09|10|11|12'
-    months = dict(zip(MONTHS.split('|'), NUMBERS.split('|')))
+        NUMBERS = '01|02|03|04|05|06|07|08|09|10|11|12'
+        months = dict(zip(MONTHS.split('|'), NUMBERS.split('|')))
 
-    dates = re.findall('|'.join(patterns), text)
-    dates = [list(filter(None, d))[0] for d in dates]
+        dates = re.findall('|'.join(patterns), text)
+        dates = [list(filter(None, d))[0] for d in dates]
 
-    def get_symbol(x): return [i for i in x if i in '/-. '][0]
+        get_symbol = lambda x: [i for i in x if i in '/-. '][0]
 
-    for date in dates:
-        day, month, year = date.split(get_symbol(date))
-        month = months[month] if not any(x in '.-/' for x in date) else month
-        new_date = datetime.date(int(year), int(month), int(day))
-        new_date = correct_month(new_date.strftime(date_format), MONTHS)
+        for date in dates:
+            day, month, year = date.split(get_symbol(date))
+            month = months[month] if not any(x in '.-/' for x in date) else month
+            new_date = datetime.date(int(year), int(month), int(day))
+            new_date = correct_month(new_date.strftime(date_format), MONTHS)
 
-        text = re.sub(date, new_date, text)
-    return text
+            text = re.sub(date, new_date, text)
+        return text
+    return

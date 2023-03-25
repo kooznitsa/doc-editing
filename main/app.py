@@ -29,10 +29,9 @@ app.config.update(
     SESSION_TYPE='filesystem',
 )
 
+app.url_map.strict_slashes = False
 bootstrap = Bootstrap(app)
-
 file = File(uuid.uuid4())
-
 queue: Queue = Queue()
 
 
@@ -41,10 +40,11 @@ def index() -> Response:
     return redirect(url_for('upload'))
 
 
-@app.route('/upload/', methods=['GET', 'POST'])
+@app.route('/upload', methods=['GET', 'POST'])
 def upload() -> str | Response:
     upload_form = UploadForm()
     filenames = {}
+    active_upload, active_edit, active_download = True, False, False
 
     if upload_form.submit1.data and upload_form.validate_on_submit():
         file.create_directories()
@@ -57,13 +57,17 @@ def upload() -> str | Response:
 
     return render_template('upload.html', 
                             upload_form=upload_form, 
-                            title='Upload files',)
+                            title='Upload files',
+                            active_upload=active_upload, 
+                            active_edit=active_edit, 
+                            active_download=active_download,)
 
 
-@app.route('/edit/', methods=['GET', 'POST'])
+@app.route('/edit', methods=['GET', 'POST'])
 def edit() -> str | Response:
     edit_form = EditForm()
     filenames = session.get('filenames', None)
+    active_upload, active_edit, active_download = False, True, False
 
     if edit_form.submit2.data and edit_form.validate_on_submit():
         t1 = time.perf_counter()
@@ -84,12 +88,15 @@ def edit() -> str | Response:
     return render_template('edit.html', 
                             edit_form=edit_form, 
                             title='Edit files',
-                            filenames=filenames,)
+                            filenames=filenames,
+                            active_upload=active_upload, 
+                            active_edit=active_edit, 
+                            active_download=active_download,)
 
 
 Thread(target=execute_queue, args=(queue,), daemon=True).start()
 
-@app.route('/download/', methods=['GET', 'POST'])
+@app.route('/download', methods=['GET', 'POST'])
 def download() -> str | Response:
     """Delete temporary folders, put into queue 
     the process of deleting ZIP, download ZIP, 
@@ -97,6 +104,7 @@ def download() -> str | Response:
     """
     download_form = DownloadForm()
     success_message = session.get('success_message', None)
+    active_upload, active_edit, active_download = False, False, True
 
     if download_form.submit3.data and download_form.validate_on_submit():
         download = file.download_files()
@@ -114,7 +122,10 @@ def download() -> str | Response:
                             download_form=download_form, 
                             title='Download files',
                             success_message=success_message,
-                            filename=file.archive_name,)
+                            filename=file.archive_name,
+                            active_upload=active_upload, 
+                            active_edit=active_edit, 
+                            active_download=active_download,)
 
 
 if __name__ == '__main__':

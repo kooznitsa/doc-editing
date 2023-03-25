@@ -1,5 +1,7 @@
 <nav class="navbar navbar-inverse" role="navigation">
-    <div class="container">
-        <a class="navbar-brand" href="{{ url_for('upload') }}">Process files</a>
-    </div>    
+    <ul class="container list-unstyled">
+        <li class="navbar-brand {{'active' if active_upload }}">Upload →</li>
+        <li class="navbar-brand {{'active' if active_edit }}">Edit →</li>
+        <li class="navbar-brand {{'active' if active_download }}">Download</li>
+    </ul>
 </nav>

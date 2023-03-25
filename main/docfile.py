@@ -1,12 +1,12 @@
 from itertools import product
-import re
 import os
+import re
 from typing import Optional
 
-import docx
-from docx.shared import Pt
-from docx.text.paragraph import Paragraph
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+import docx # type: ignore
+from docx.enum.text import WD_ALIGN_PARAGRAPH # type: ignore
+from docx.shared import Pt # type: ignore
+from docx.text.paragraph import Paragraph # type: ignore
 
 from utils import convert_dates, get_locale, paragraph_replace_text
 
@@ -18,20 +18,24 @@ HEADER_BTM_MARGIN = Pt(6)
 
 
 class DocFile(object):
-    def __init__(self, 
-                 input_path: str, 
-                 output_path: str, 
-                 file: str) -> None:
+    def __init__(
+        self, 
+        input_path: str, 
+        output_path: str, 
+        file: str
+    ) -> None:
         self.input_path = input_path
         self.output_path = output_path
         self.file = file
         self.doc = docx.Document(os.path.abspath(self.input_path + file))
 
-    def replace_text(self, 
-                     old_string: str, 
-                     new_str: str, 
-                     language: str, 
-                     date_format: str) -> None:
+    def replace_text(
+        self, 
+        old_string: str, 
+        new_str: str, 
+        language: str,
+        date_format: Optional[str] = None
+    ) -> None:
         MONTHS, new_quotes = get_locale(language)
         regex = re.compile(re.escape(old_string))
 
@@ -42,7 +46,8 @@ class DocFile(object):
         for paragraph in self.doc.paragraphs:
             paragraph_replace_text(paragraph, regex, new_str)
             replace_quotes(paragraph)
-            paragraph.text = convert_dates(paragraph.text, date_format, MONTHS)
+            if date_format:
+                paragraph.text = convert_dates(paragraph.text, MONTHS, date_format)
 
         for table in self.doc.tables:
             for row in table.rows:
@@ -50,12 +55,15 @@ class DocFile(object):
                     for paragraph in cell.paragraphs:
                         paragraph_replace_text(paragraph, regex, new_str)
                         replace_quotes(paragraph)
-                        paragraph.text = convert_dates(paragraph.text, date_format, MONTHS)
+                        if date_format:
+                            paragraph.text = convert_dates(paragraph.text, MONTHS, date_format)
 
         for section in self.doc.sections:
-            for p1, p2, p3 in product(section.header.paragraphs, 
-                                      section.first_page_header.paragraphs,
-                                      section.footer.paragraphs):
+            for p1, p2, p3 in product(
+                section.header.paragraphs, 
+                section.first_page_header.paragraphs,
+                section.footer.paragraphs
+            ):
                 paragraph_replace_text(p1, regex, new_str)
                 paragraph_replace_text(p2, regex, new_str)
                 paragraph_replace_text(p3, regex, new_str)
@@ -64,9 +72,10 @@ class DocFile(object):
                 replace_quotes(p2)
                 replace_quotes(p3)
 
-                p1.text = convert_dates(p1.text, date_format, MONTHS)
-                p2.text = convert_dates(p2.text, date_format, MONTHS)
-                p3.text = convert_dates(p3.text, date_format, MONTHS)
+                if date_format:
+                    p1.text = convert_dates(p1.text, MONTHS, date_format)
+                    p2.text = convert_dates(p2.text, MONTHS, date_format)
+                    p3.text = convert_dates(p3.text, MONTHS, date_format)
 
     def add_start_text(self, start_text: Optional[str] = None) -> None:
         if start_text:
