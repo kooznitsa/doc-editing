@@ -9,10 +9,10 @@ from queue import Queue
 from threading import Thread
 from werkzeug.wrappers.response import Response
 
-from config import STATIC_FOLDER, TEMPLATE_FOLDER, PORT
-from file import File
-from forms import EditForm, DownloadForm, UploadForm
-from utils import countdown, execute_queue
+from main.config import STATIC_FOLDER, TEMPLATE_FOLDER, PORT
+from main.file import File
+from main.forms import EditForm, DownloadForm, UploadForm
+from main.utils import countdown, execute_queue
 
 
 app = Flask(

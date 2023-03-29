@@ -8,7 +8,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH # type: ignore
 from docx.shared import Pt # type: ignore
 from docx.text.paragraph import Paragraph # type: ignore
 
-from utils import convert_dates, get_locale, paragraph_replace_text
+from main.utils import convert_dates, get_locale, paragraph_replace_text
 
 
 FONT_NAME = 'Times New Roman'
@@ -27,7 +27,7 @@ class DocFile(object):
         self.input_path = input_path
         self.output_path = output_path
         self.file = file
-        self.doc = docx.Document(os.path.abspath(self.input_path + file))
+        self.doc = docx.Document(os.path.join(self.input_path, file))
 
     def replace_text(
         self, 
@@ -100,4 +100,4 @@ class DocFile(object):
             font.underline = True
 
     def save_file(self) -> None:
-        self.doc.save(os.path.abspath(self.output_path + self.file))
+        self.doc.save(os.path.join(self.output_path, self.file))

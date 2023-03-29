@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm # type: ignore
 from wtforms import MultipleFileField, RadioField, SelectField, StringField, SubmitField # type: ignore
 from wtforms.validators import InputRequired, Length # type: ignore
 
-from utils import get_current_date, FORMATS
+from main.utils import get_current_date, FORMATS
 
 
 class UploadForm(FlaskForm):

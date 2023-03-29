@@ -17,6 +17,7 @@ FORMATS = (
 REPL_DICT = {
     '  ': ' ',
     ' - ': ' — ',
+    '- ': '— ',
     ' )': ')',
     '( ': '(',
     ' , ': ', ',
@@ -131,7 +132,8 @@ def convert_dates(
     if date_format:
         patterns = [
             r'(\d{1,2} (?:' + MONTHS + ') \d{4})',
-            r'(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})'
+            r'(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})',
+            r'(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})',
         ]
 
         NUMBERS = '01|02|03|04|05|06|07|08|09|10|11|12'
@@ -143,11 +145,13 @@ def convert_dates(
         get_symbol = lambda x: [i for i in x if i in '/-. '][0]
 
         for date in dates:
-            day, month, year = date.split(get_symbol(date))
+            if re.search(r'(\d{4}[-/.]\d{1,2}[-/.]\d{1,2})', date):
+                year, month, day = date.split(get_symbol(date))
+            else:
+                day, month, year = date.split(get_symbol(date))
             month = months[month] if not any(x in '.-/' for x in date) else month
             new_date = datetime.date(int(year), int(month), int(day))
             new_date = correct_month(new_date.strftime(date_format), MONTHS)
 
             text = re.sub(date, new_date, text)
-        return text
-    return
+    return text

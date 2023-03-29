@@ -9,9 +9,9 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 from werkzeug.wrappers.response import Response
 
-from config import ALLOWED_EXTENSIONS, STATIC_FOLDER
-from docfile import DocFile
-from utils import REPL_DICT
+from main.config import ALLOWED_EXTENSIONS, STATIC_FOLDER
+from main.docfile import DocFile
+from main.utils import REPL_DICT
 
 
 class File(object):
@@ -30,9 +30,11 @@ class File(object):
     def upload_file(self, file: FileStorage) -> tuple[str, str]:
         filename = secure_filename(file.filename) \
                 if file.filename else secure_filename(str(uuid.uuid4()))
+        
         if self.allowed_file(filename):
             file.save(os.path.join(self.input_path, filename))
             return filename, 'success'
+        
         return f'{filename} is not a .DOCX file', 'error'
     
     def edit_file(
