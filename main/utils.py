@@ -10,8 +10,9 @@ from docx.text.paragraph import Paragraph # type: ignore
 
 
 FORMATS = (
-    '%d %B %Y', '%d.%m.%Y', '%d-%m-%Y',
-    '%d/%m/%Y', '%Y.%m.%d', '%Y-%m-%d', '%Y/%m/%d',
+    '%d %B %Y', 
+    '%d.%m.%Y', '%d-%m-%Y', '%d/%m/%Y', 
+    '%Y.%m.%d', '%Y-%m-%d', '%Y/%m/%d',
 )
 
 REPL_DICT = {

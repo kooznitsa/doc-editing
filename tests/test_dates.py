@@ -1,4 +1,5 @@
 import pytest
+
 from main.utils import convert_dates, get_locale
 
 
@@ -43,6 +44,11 @@ class TestDates:
         ),
     ])
 
-    def test_convert_dates(self, pattern, dates, expected_result):
+    def test_convert_dates(
+        self, 
+        pattern: str, 
+        dates: tuple, 
+        expected_result: str
+    ) -> None:
         for date in dates:
             assert convert_dates(date, self.MONTHS, pattern) == expected_result

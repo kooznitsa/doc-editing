@@ -1,11 +1,12 @@
-import docx
 import io
 import os
 from pathlib import Path
 import pytest
 import textwrap
+from typing import Generator
 import uuid
 
+import docx # type: ignore
 from werkzeug.datastructures import FileStorage # type: ignore
 
 import app
@@ -14,7 +15,7 @@ from main.file import File
 
 
 class MockFile(File):
-    def __init__(self, input_path, output_path):
+    def __init__(self, input_path: str, output_path: str) -> None:
         super().__init__(uuid.uuid4())
         self.input_path = input_path
         self.output_path = output_path
@@ -45,7 +46,7 @@ class TestFile:
     wrong_filenames = ('wrong1.txt', 'wrong2.png')
 
     @pytest.fixture(scope='session')
-    def create_directories(self, tmp_path_factory: Path):
+    def create_directories(self, tmp_path_factory: Path) -> Generator:
         input_directory = tmp_path_factory.mktemp('tmp')
         output_directory = tmp_path_factory.mktemp('tmp')
 
@@ -58,7 +59,7 @@ class TestFile:
         yield input_directory, output_directory
 
     @pytest.fixture(scope='module')
-    def test_client(self):
+    def test_client(self) -> Generator:
         flask_app = app.app
         testing_client = flask_app.test_client()
         ctx = flask_app.app_context()
@@ -66,11 +67,11 @@ class TestFile:
         yield testing_client
         ctx.pop()
 
-    def test_allowed_file(self):
+    def test_allowed_file(self) -> None:
         for filename in self.wrong_filenames:
             assert '.' in filename and filename.rsplit('.', 1)[1].lower() not in ALLOWED_EXTENSIONS
     
-    def test_upload(self, test_client):
+    def test_upload(self, test_client: Generator) -> None:
         data = FileStorage(
             stream=io.BytesIO(b'some initial text data'),
             filename='fake-text-stream.docx',
@@ -78,7 +79,7 @@ class TestFile:
         response = test_client.post('/upload', data=data)
         assert response.status_code == 200
 
-    def test_download(self, test_client):
+    def test_download(self, test_client: Generator) -> None:
         data = FileStorage(
             stream=io.BytesIO(b'some initial text data'),
             filename='fake-text-stream.docx',
@@ -86,11 +87,11 @@ class TestFile:
         response = test_client.post('/download', data=data)
         assert response.status_code == 200
 
-    def get_text(self, path):
+    def get_text(self, path: Path) -> str:
         doc = docx.Document(path)
         return '\n'.join(para.text for para in doc.paragraphs)
 
-    def test_replace_text(self, create_directories):
+    def test_replace_text(self, create_directories: Generator) -> None:
         input_directory, output_directory = create_directories
 
         for filename in os.listdir(input_directory):
